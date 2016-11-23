@@ -10,12 +10,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 
+import com.game.controllers.Utility;
 import com.game.dto.JsonInfo;
 
 public class IsDownloaded {
@@ -66,6 +63,7 @@ public class IsDownloaded {
 			throws IOException, InterruptedException {
 		
 		//System.out.println("file path:" + downloadFilePath);
+		Utility utility=new Utility();
 		FileReader st1 = new FileReader(downloadFilePath+"/"+ fileName);
 		BufferedReader st2 = new BufferedReader(st1);
 		ArrayList<String> data = new ArrayList<>();
@@ -120,23 +118,11 @@ public class IsDownloaded {
 				data = isFileDownloaded(dowFileName);
 
 				if (data.get(1).equals("true")) {
-					String movePath = jsonInfo.getApkFileDownloadFolder();
-					String targetPath = movePath + folderName + "/";
-
-					File file = new File(targetPath);
-					if (!file.exists())
-						file.mkdirs();
-
-					movePath = movePath.concat(data.get(0));
-					targetPath = targetPath.concat(data.get(0));
-
-					Path movefrom = FileSystems.getDefault().getPath(movePath);
-					Path target = FileSystems.getDefault().getPath(targetPath);
-
-					// moving download file into new folder
-					Files.move(movefrom, target, StandardCopyOption.REPLACE_EXISTING);
-
+					//moving file to new folder
+					utility.moveDataToFolder(jsonInfo, folderName, data.get(0));
+					
 					System.out.println(dowFileName + " is downloaded");
+					
 				} else {
 					data = isFileDownloaded(dowFileName);
 
@@ -149,27 +135,8 @@ public class IsDownloaded {
 					}
 					System.out.println(dowFileName + " is downloded");
 
-					String movePath = jsonInfo.getApkFileDownloadFolder();
-					String targetPath = movePath + folderName + "/";
-
-					File file = new File(targetPath);
-					if (!file.exists())
-						file.mkdirs();
-
-					movePath = movePath.concat(data.get(0));
-					targetPath = targetPath.concat(data.get(0));
-
-					Path movefrom = FileSystems.getDefault().getPath(movePath);
-					Path target = FileSystems.getDefault().getPath(targetPath);
-
-					// moving download file into new folder
-					Files.move(movefrom, target, StandardCopyOption.REPLACE_EXISTING);
-
-					// dowFileName = st2.readLine();
-
-					/*
-					 * if(dowFileName.equals(null)) break;
-					 */
+					//moving file to new folder
+					utility.moveDataToFolder(jsonInfo, folderName, data.get(0));
 
 				} // end of inner for else
 

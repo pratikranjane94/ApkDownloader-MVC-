@@ -10,14 +10,13 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.LinkedList;
+import java.util.List;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.log4j.Logger;
 import org.openqa.selenium.chrome.ChromeDriver;
-
-import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -25,10 +24,13 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
-import com.game.dao.GameJsoupDaoImp;
+import com.game.dao.GameJsoupDao;
 import com.game.dto.FileMeta;
+import com.game.dto.PlayStoreData;
+import com.game.dto.ScrapedData;
 import com.game.model.ApkDownloadSelenium;
 import com.game.model.ApkSiteDataFetching;
+import com.game.model.ServerUtilities;
 import com.game.model.GameNotFound;
 import com.game.model.PlayStoreDataFetching;
 import com.game.model.PlayStoreUrlFetching;
@@ -38,9 +40,10 @@ import com.game.model.PlayStoreUrlFetching;
 @RequestMapping("/controller")
 public class FileController {
 
-
 	@Resource(name = "gameJsoupDao")
-	private GameJsoupDaoImp gameJsoupDao;
+	private GameJsoupDao gameJsoupDao;
+
+	Logger logger = Logger.getLogger("CONTROLLER");
 
 	/*-------------------------------------------Creating JSOUP of Uploaded File-------------------------------------------*/
 
@@ -48,241 +51,156 @@ public class FileController {
 	@RequestMapping(value = "/upload", method = RequestMethod.POST)
 	public void upload(@RequestParam("files") MultipartFile mpf, HttpServletResponse response)
 			throws IOException, InterruptedException {
-		
-		// Class objects are created
-		PlayStoreUrlFetching purl = new PlayStoreUrlFetching();
-		PlayStoreDataFetching psdf = new PlayStoreDataFetching();
-		ApkSiteDataFetching asdf = new ApkSiteDataFetching();
+
+		// Model Class objects
+		PlayStoreUrlFetching playStoreUrlFetching = new PlayStoreUrlFetching();
+		PlayStoreDataFetching playStoreDataFetching = new PlayStoreDataFetching();
+		ApkSiteDataFetching apkSiteDataFetching = new ApkSiteDataFetching();
+		ServerUtilities serverUtilities = new ServerUtilities();
+
 		GameNotFound gameNotFound = new GameNotFound();
 		ApkDownloadSelenium apkDownloadSelenium = new ApkDownloadSelenium();
-		FileMeta fileMeta = null;
+		Utility utility = new Utility();
 
-		LinkedList<FileMeta> files = new LinkedList<FileMeta>();
-		ArrayList<String> playStoreDetails = new ArrayList<String>();
-		ArrayList<String> apkSiteDetails = new ArrayList<String>();
+		// DTO class objects
+		FileMeta fileMeta = new FileMeta();
+		PlayStoreData playStoreData = new PlayStoreData();
+		ScrapedData scrapedData = new ScrapedData();
+
 		ArrayList<ChromeDriver> closeTabs = new ArrayList<>();
 
 		String url = ""; // Play Store URL
-		String line; // line read from file and stores game name
 		String temp = ""; // game name temporary
-		String fileSize; // size of uploaded file
 		String fileName; // name of uploaded file
 		String downloadFileName; // downloading name for file.
-		String fileNameID = null;
-		int progress = 0; // no of game's JSOUP completed
-		int noOfLines = 0; // temporary stores total no of game in file
-		int id=0; // unique id for each uploaded file
+		String fileNameID = null; // file name with id
+		int progress = 0; // no of game's data is scraped
+		int noOfLines = 0; // total no of game in file
+		int id = 0; // unique id for each uploaded file
 		int totalGames = 0; // total games in file
 		boolean status = true; // status of APK-DL CSV created or not
 		boolean psStatus = true; // status of PlayStore CSV created or not
 
-		System.out.println("Ajax socket file controller");
+		System.out.println("-----------------* Game Scraping Controller *-----------------");
 
 		// getting uploaded MULTIPART file and its information
-			System.out.println(mpf.getOriginalFilename() + " uploaded! ");
+		System.out.println(mpf.getOriginalFilename() + " uploaded! ");
 
-			fileName = mpf.getOriginalFilename();
-			downloadFileName = mpf.getOriginalFilename().replace(".", "Download.");
+		// getting original filename and setting download filename
+		fileName = mpf.getOriginalFilename();
+		downloadFileName = mpf.getOriginalFilename().replace(".", "Download.");
 
-			fileSize = mpf.getSize() / 1024 + " Kb";
+		// storing data in file meta class
+		fileMeta.setFileName(fileName);
+		fileMeta.setFileType(mpf.getContentType());
+		fileMeta.setBytes(mpf.getBytes());
 
-			// storing data in file meta class
-			fileMeta = new FileMeta();
-			fileMeta.setFileName(fileName);
-			fileMeta.setFileSize(mpf.getSize() / 1024 + " Kb");
-			fileMeta.setFileType(mpf.getContentType());
+		// getting data from uploaded file
+		InputStreamReader reader = new InputStreamReader(mpf.getInputStream());
 
-			try {
-				fileMeta.setBytes(mpf.getBytes());
-				InputStreamReader reader=new InputStreamReader(mpf.getInputStream());
-				InputStreamReader reader2=new InputStreamReader(mpf.getInputStream());
-				/*// copy uploaded file to local disk
-				FileCopyUtils.copy(mpf.getBytes(),
-						new FileOutputStream("/home/bridgelabz6/Pictures/files/" + fileName));*/
+		BufferedReader buffReader = new BufferedReader(reader);
 
-				// counting no of games in file
-				//FileReader frCount = new FileReader("/home/bridgelabz6/Pictures/files/" + fileName);
-				BufferedReader brCount = new BufferedReader(reader);
-				
-				while (brCount.readLine() != null) {
-					noOfLines++;
-				}
-				totalGames = noOfLines - 1;
+		buffReader.readLine();
 
-				// reseting count to zero
-				noOfLines = 0;
-
-				fileMeta.setTotalGames(totalGames);
-				System.out.println("totalGames:" + totalGames);
-
-				//brCount.close();
-				// end of counting game
-
-				
-				/*----------------------------JSOUP started--------------------------------*/
-
-				//FileReader fr = new FileReader("/home/bridgelabz6/Pictures/files/" + fileName);
-				BufferedReader br = new BufferedReader(reader2);
-
-				line = br.readLine();
-				if (line == null) {
-					System.out.println("file is empty");
-				} else {
-					line = br.readLine();
-
-					for (progress = 0; progress < totalGames; progress++) {
-
-						fileMeta.setProgress(progress);
-
-						temp = line;
-						String[] gname = line.split("\\,");
-
-						// Separates the game name from line read from file
-						line = gname[1];
-						System.out.println("Game Name= " + line);
-
-						// getting URL for game
-						url = purl.findUrl(line);
-
-						line = br.readLine();
-
-						// exception handling if URL not found
-						if (url == null) {
-							//gameNotFound.addGameNotFound("Url", temp);
-							System.err.println("URL Not Found");
-							continue;
-						} // end of handling in URL fetching
-
-						// getting play store site data
-						playStoreDetails = psdf.getPlayStoreData(url);
-
-						// handling exception in play store details
-						if (playStoreDetails.equals(null)) {
-							//gameNotFound.addGameNotFound("PlayStore", temp);
-							System.err.println("PlayStore Data Not Found");
-						} // end of handling in play store details
-
-						// creating CSV file of play store data
-						//psStatus = psdf.createCsv(playStoreDetails, downloadFileName);
-
-						// handling exception in creating play store data CSV
-						// file
-						/*if (psStatus == false) {
-							gameNotFound.addGameNotFoundInFile("PlayStore", temp, downloadFileName);
-						}*/
-
-						// getting play store package name
-						String pack = psdf.getPackage(playStoreDetails);
-
-						// getting APK-DL site data
-						apkSiteDetails = asdf.createApkSiteDetails(pack);
-
-						// handling exception in APK site details
-						if (apkSiteDetails == null) {
-							//gameNotFound.addGameNotFoundInFile("DlApk", temp, downloadFileName);
-							System.err.println("DL-APK Data Not Found");
-						} // end of handling in APK-DL
-
-						/*// creating CSV file of APK-DL site details
-						status = asdf.createCsv(apkSiteDetails, downloadFileName);
-
-						// handling exception in creating APK-DL data CSV file
-						if (status == false) {
-							// gameNotFound.addGameNotFoundInFile("DlApk", temp,
-							// downloadFileName);
-							System.out.println("eception handled");
-						}*/
-
-						// Database entry
-						if (gameJsoupDao.isEmpty())
-							id = 0;
-						else {
-							// if last filename is same as current filename
-							// assign same id to game data
-							if (gameJsoupDao.checkLastFileName().equals(fileName))
-								id = gameJsoupDao.checkId(fileName);
-							else {
-								// if filename not matched, different(i.e new)
-								// file is uploaded assign new id(i.e increase
-								// id)
-								id = gameJsoupDao.checkLastId();
-								id = id + 1;
-							}
-						}
-
-						// data is inserted into database
-						gameJsoupDao.insert(id, progress + 1, fileName, playStoreDetails, apkSiteDetails);
-
-						// end of database entry
-
-						System.out.println("For progress:" + progress);
-
-					} // end of for
-
-					fileNameID = fileName.replace(".", Integer.toString(id) + ".");
-					gameJsoupDao.update(fileNameID, id);
-					fileMeta.setFileName(fileNameID);
-				} // end of else
-				br.close();
-
-			} catch (IOException e) {
-				e.printStackTrace();
+		String line = null;
+		while ((line = buffReader.readLine()) != null) {
+			if (line.trim().isEmpty()) {
+				continue;
 			}
-			// adding metaFile info to ArrayList files
-			files.add(fileMeta);
 
-/*			// concatenating ID with filename
-			String fileNameID = fileName.replace(".", Integer.toString(id) + ".");
-			String downloadFileNameID = downloadFileName.replace(".", Integer.toString(id) + ".");
+			// Database entry
+			if (gameJsoupDao.isEmpty()) {
+				id = 0;
+				logger.info("Database is Empty");
+			} else {
+				// if last filename is same as current filename
+				// assign same id to game data
+				try {
+					if (gameJsoupDao.checkLastFileName().equals(fileName)) {
+						id = gameJsoupDao.checkId(fileName);
+					} else {
+						/*
+						 * if filename not matched, different(i.e new) file is
+						 * uploaded assign new id(i.e increase id)
+						 */
+						id = gameJsoupDao.checkLastId();
+						id = id + 1;
+					}
+				} catch (Exception e) {
+					// TODO: handle exception
+				}
 
-			File oldFile = new File("/home/bridgelabz6/Pictures/files/" + fileName);
-			File newFile = new File("/home/bridgelabz6/Pictures/files/" + fileNameID);
+			}
 
-			File oldDownloadfile = new File("/home/bridgelabz6/Pictures/files/" + downloadFileName);
-			File newDownloadfile = new File("/home/bridgelabz6/Pictures/files/" + downloadFileNameID);
+			totalGames = noOfLines++;
 
-			// renaming old file name to new
-			if (oldFile.renameTo(newFile))
-				System.out.println("File renamed");
-			else
-				System.out.println("Sorry! File can't be renamed");
+			fileMeta.setProgress(progress);
+			String[] gname = line.split("\\,");
 
-			// renaming old download file name to new
-			fileMeta.setDownloadFileName(downloadFileNameID);
-			if (oldDownloadfile.renameTo(newDownloadfile))
-				System.out.println("File renamed");
-			else
-				System.out.println("Sorry! File can't be renamed");
-*/
-			// copy downloading file to local disk
-			//fileMeta.setDownBytes(FileUtils.readFileToByteArray(newDownloadfile));
+			// Separates the game name from line read from file
+			String gameName = gname[1];
+			System.out.println("Game Name:" + gameName);
+			logger.debug("Game name" + gameName);
 
-			System.out.println("-----------End Of Program-----------");
+			// getting URL for game
+			url = playStoreUrlFetching.findUrl(gameName);
 
-		// end of first function
+			// exception handling if URL not found
+			if (url == null) {
+				System.err.println("URL Not Found");
+				logger.debug("URL Not Found");
+				continue;
+			} // end of handling in URL fetching
 
-		// start of download function
+			// getting play store site data
+			playStoreData = playStoreDataFetching.getPlayStoreData(url);
+
+			// handling exception in play store details
+			if (playStoreData.equals(null)) {
+				System.err.println("PlayStore Data Not Found");
+				logger.debug("PlayStore Data Not Found");
+			} // end of handling in play store details
+
+			// getting APK-DL site data
+			scrapedData = apkSiteDataFetching.createApkSiteDetails(playStoreData, id, noOfLines, fileName);
+
+			// handling exception in APK site details
+			if (scrapedData == null) {
+				System.err.println("DL-APK Data Not Found");
+				logger.debug("DL-APK Data Not Found");
+			} // end of handling in APK-DL
+
+			// data is inserted into database
+			gameJsoupDao.insert(scrapedData);
+			// end of database entry
+
+		} // end of while
+
+		fileNameID = fileName.replace(".", Integer.toString(id) + ".");
+		fileMeta.setFileName(fileNameID);
+
+		// updating new file name in database
+		gameJsoupDao.update(fileMeta.getFileName(), id);
 
 		try {
-
-			System.out.println("after download file name:" + fileNameID);
-
-			// writing download file in byte
-			String data =gameJsoupDao.getFileRecords(fileNameID);
-
-			response.setContentType(fileMeta.getFileType());
-			response.setHeader("Content-disposition",
-					"attachment; filename=\"" + fileMeta.getFileName() + "\"");
-			FileCopyUtils.copy(data.getBytes(), response.getOutputStream());
-			System.out.println("download file name:" + fileMeta.getFileName());
-			System.out.println("controller response:" + response.toString());
-		} catch (IOException e) {
-			e.printStackTrace();
+			buffReader.close();
+		} catch (IOException io) {
+			// Ignore
 		}
-	}// End of Downloading file function
+
+		System.out.println("-----------End Of Program-----------");
+
+		// end of scraping function
+
+		// getting scraped data from database
+		List<ScrapedData> list = gameJsoupDao.getFileRecords(fileMeta.getFileName());
+
+		// getting file data from database and converting into CSV format
+		String data = serverUtilities.databaseToCSVConverter(list);
+
+		// setting data from database to HTTP SERVLET Response
+		response = serverUtilities.setDataInResponse(fileMeta, response, data);
+
+	}// End of sending file data in response
 
 }// End of class
-
-
-
-

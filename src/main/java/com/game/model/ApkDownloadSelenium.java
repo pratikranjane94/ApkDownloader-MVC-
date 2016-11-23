@@ -12,6 +12,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
+
+import org.apache.log4j.Logger;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -23,10 +25,11 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.remote.DesiredCapabilities;
 
-
 import com.game.dto.JsonInfo;
 
 public class ApkDownloadSelenium {
+
+	Logger logger = Logger.getLogger("APKSELENIUM");
 
 	private JsonInfo jsonInfo;
 
@@ -80,6 +83,7 @@ public class ApkDownloadSelenium {
 			driver = new ChromeDriver(capabilities);
 
 			System.out.println("Opening page:" + playStoreUrl);
+			logger.debug("Opening page:" + playStoreUrl);
 
 			// opening login page
 			driver.get(chromeUrl);
@@ -121,9 +125,12 @@ public class ApkDownloadSelenium {
 
 			// driver.manage().window().maximize();
 			System.out.println("Automation Completed");
+			logger.debug("Automation Completed");
 		} catch (Exception e) {
 			e.printStackTrace();
-			System.out.println("selenium exception");
+			System.out.println("Selenium exception! Opening page again");
+			logger.debug("Selenium Exception! Opening page again", e);
+			driver.quit();
 			downloadApkUsingSelenium(playStoreUrl);
 		}
 
@@ -151,7 +158,7 @@ public class ApkDownloadSelenium {
 			driver.quit();
 		} catch (Exception e) {
 			System.err.println("Exception in closing tab");
-
+			logger.debug("Exception in closing tab", e);
 		}
 
 	}
@@ -160,43 +167,39 @@ public class ApkDownloadSelenium {
 	public ArrayList<String> readFile(String filePath) throws IOException {
 
 		String url = null;
-		// String line;
-		int progress;
-		int count = 0;
-		int totoalGames = 0;
-
 		ArrayList<String> urlList = new ArrayList<>();
-		// counting no of games in file
-		FileReader frCount = new FileReader(filePath);
-		BufferedReader brCount = new BufferedReader(frCount);
-		while (brCount.readLine() != null) {
-			count++;
-		}
-		totoalGames = count - 1;
-		brCount.close();
-		// end of counting no of games
 
-		// reading game name
+		System.out.println("Filepath:" + filePath);
+
 		FileReader fr = new FileReader(filePath);
 		BufferedReader br = new BufferedReader(fr);
 		url = br.readLine();
-		if (url == null) {
-			System.out.println("file is empty");
-		} else {
-			// line = br.readLine();
-			for (progress = 0; progress < totoalGames; progress++) {
-				url = br.readLine();
-				String[] gname = url.split("\\,");
-				try {
-					url = gname[6];
-				} catch (Exception e) {
-					System.err.println("unable to read url");
+
+		while (url != null) {
+			url = br.readLine();
+			try {
+				if (url.trim().isEmpty()) {
+					continue;
 				}
-				// System.out.println("playstore url:"+url);
+			} catch (Exception e) {
+				logger.debug("Excepion in isEmpty", e);
+				// ignore
+			}
+			System.out.println("url:" + url);
+			try {
+				String[] gname = url.split("\\,");
+				url = gname[6];
+
 				if (!url.equals(null))
 					urlList.add(url);
+
+				
+			} catch (NullPointerException e) {
+				System.out.println("Unable to read URL");
+				logger.debug("Unable to read URL", e);
+			} catch (Exception e) {
+				// ignore
 			}
-			url = br.readLine();
 		}
 		br.close();
 		return urlList;

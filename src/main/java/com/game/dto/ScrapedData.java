@@ -1,6 +1,7 @@
 package com.game.dto;
 
 import javax.persistence.Column;
+import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -9,7 +10,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table
-public class Count {
+public class ScrapedData {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
@@ -18,22 +19,8 @@ public class Count {
 	private int id;
 	@Column
 	private int no;
-	@Column
+	@Column(name="FILE_NAME")
 	private String fileName;
-	@Column
-	private String title;
-	@Column
-	private String genre;
-	@Column
-	private String size;
-	@Column
-	private String version;
-	@Column
-	private String publishDate;
-	@Column
-	private String packageName;
-	@Column
-	private String url;
 	@Column
 	private String dlTitle;
 	@Column
@@ -42,150 +29,78 @@ public class Count {
 	private String dlSize;
 	@Column
 	private String dlVersion;
-	@Column
+	@Column(name="PUBLISH_DATE")
 	private String dlPublishDate;
 	@Column
 	private String downloadLink;
-
+	@Embedded
+	private PlayStoreData playStoreData;
+	
 	public int getKey() {
 		return key;
 	}
-
 	public void setKey(int key) {
 		this.key = key;
 	}
-
 	public int getId() {
 		return id;
 	}
-
 	public void setId(int id) {
 		this.id = id;
 	}
-
 	public int getNo() {
 		return no;
 	}
-
 	public void setNo(int no) {
 		this.no = no;
 	}
-
 	public String getFileName() {
 		return fileName;
 	}
-
 	public void setFileName(String fileName) {
 		this.fileName = fileName;
 	}
-
-	public String getTitle() {
-		return title;
-	}
-
-	public void setTitle(String title) {
-		this.title = title;
-	}
-
-	public String getGenre() {
-		return genre;
-	}
-
-	public void setGenre(String genre) {
-		this.genre = genre;
-	}
-
-	public String getSize() {
-		return size;
-	}
-
-	public void setSize(String size) {
-		this.size = size;
-	}
-
-	public String getVersion() {
-		return version;
-	}
-
-	public void setVersion(String version) {
-		this.version = version;
-	}
-
-	public String getPublishDate() {
-		return publishDate;
-	}
-
-	public void setPublishDate(String publishDate) {
-		this.publishDate = publishDate;
-	}
-
-	public String getPackageName() {
-		return packageName;
-	}
-
-	public void setPackageName(String packageName) {
-		this.packageName = packageName;
-	}
-
-	public String getUrl() {
-		return url;
-	}
-
-	public void setUrl(String url) {
-		this.url = url;
-	}
-
 	public String getDlTitle() {
 		return dlTitle;
 	}
-
 	public void setDlTitle(String dlTitle) {
 		this.dlTitle = dlTitle;
 	}
-
 	public String getDlGenre() {
 		return dlGenre;
 	}
-
 	public void setDlGenre(String dlGenre) {
 		this.dlGenre = dlGenre;
 	}
-
 	public String getDlSize() {
 		return dlSize;
 	}
-
 	public void setDlSize(String dlSize) {
 		this.dlSize = dlSize;
 	}
-
 	public String getDlVersion() {
 		return dlVersion;
 	}
-
 	public void setDlVersion(String dlVersion) {
 		this.dlVersion = dlVersion;
 	}
-
 	public String getDlPublishDate() {
 		return dlPublishDate;
 	}
-
 	public void setDlPublishDate(String dlPublishDate) {
 		this.dlPublishDate = dlPublishDate;
 	}
-
 	public String getDownloadLink() {
 		return downloadLink;
 	}
-
 	public void setDownloadLink(String downloadLink) {
 		this.downloadLink = downloadLink;
 	}
-
-	@Override
-	public String toString() {
-		return "Count [id=" + id + ", no=" + no + ", fileName=" + fileName + ", title=" + title + "]";
+	public PlayStoreData getPlayStoreData() {
+		return playStoreData;
 	}
-
+	public void setPlayStoreData(PlayStoreData playStoreData) {
+		this.playStoreData = playStoreData;
+	}	
+	
 }

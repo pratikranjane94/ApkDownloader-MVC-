@@ -5,234 +5,221 @@
 
 package com.game.dao;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.annotation.Resource;
 
+import org.apache.log4j.Logger;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.springframework.stereotype.Repository;
 
-import com.game.dto.Count;
+import com.game.dto.ScrapedData;
 
 @Repository("gameJsoupDao")
 public class GameJsoupDaoImp implements GameJsoupDao {
 
 	// creating session factory
-	@Resource(name = "sessionFactory")
+	// @Resource(name = "sessionFactory")
+	@Resource
 	SessionFactory sessionFactory;
 
 	// creating session
 	Session session;
+	// info -> debug -> warning - error
+	Logger logger = Logger.getLogger("DAO");
 
 	// Inserting JSOUP data into database
-	public void insert(int id, int no, String fileName, ArrayList<String> playStoreDetails,
-			ArrayList<String> apkSiteDetails) {
-
+	public void insert(ScrapedData scrapedData) {
+		logger.debug("insert start");
 		session = sessionFactory.openSession();
 		Transaction tr = session.beginTransaction();
-
-		Count count = new Count();
-
-		count.setId(id);
-		count.setNo(no);
-		count.setFileName(fileName);
-		count.setTitle(playStoreDetails.get(0));
-		count.setGenre(playStoreDetails.get(1));
-		count.setSize(playStoreDetails.get(2));
-		count.setVersion(playStoreDetails.get(3));
-		count.setPublishDate(playStoreDetails.get(4));
-		count.setPackageName(playStoreDetails.get(5));
-		count.setUrl(playStoreDetails.get(6));
-		if (apkSiteDetails != null) {
-			try {
-				count.setDlTitle(apkSiteDetails.get(0));
-				count.setDlGenre(apkSiteDetails.get(1));
-				count.setDlSize(apkSiteDetails.get(2));
-				count.setDlVersion(apkSiteDetails.get(3));
-				count.setDlPublishDate(apkSiteDetails.get(4));
-				count.setDownloadLink(apkSiteDetails.get(5));
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+		try {
+			// Storing data into database
+			session.save(scrapedData);
+			tr.commit();
+		} catch (Exception exp) {
+			tr.rollback();
 		}
-		// Storing data into database
-		session.save(count);
-		tr.commit();
 		session.close();
 		System.out.println("Jsoup data stored in database");
+		logger.debug("Jsoup data stored in database");
 	}
 
 	// Returns whether database is empty or not
 	@SuppressWarnings("rawtypes")
 	public boolean isEmpty() {
-		session = sessionFactory.openSession();
+		List list = null;
+		try {
+			session = sessionFactory.openSession();
 
-		Query query = session.createQuery("from Count");
-		List list = query.list();
+			Query query = session.createQuery("from ScrapedData");
+			list = query.list();
 
-		System.out.println("Is empty:" + list.size());
-		session.close();
-		if (list.size() <= 0)
+			System.out.println("Is empty:" + list.size());
+			session.close();
+		} catch (Exception e) {
+			logger.debug("Exception in isEmpty", e);
+		}
+		if (list.size() <= 0) {
+			logger.debug("Database is empty");
 			return true;
-		else
+		} else {
+			logger.debug("Database is not empty");
 			return false;
+		}
+
 	}
 
 	// Returns last file name from database
 	@SuppressWarnings("rawtypes")
 	public String checkLastFileName() {
-		Count count = new Count();
-		String lastFileName;
+		ScrapedData count = new ScrapedData();
+		String lastFileName = null;
 
-		session = sessionFactory.openSession();
+		try {
+			session = sessionFactory.openSession();
 
-		Query query = session.createQuery("from Count order by id DESC");
-		query.setMaxResults(1);
+			Query query = session.createQuery("from ScrapedData order by id DESC");
+			query.setMaxResults(1);
 
-		List list = query.list();
-		for (int i = 0; i < list.size(); i++) {
-			count = (Count) list.get(i);
+			List list = query.list();
+			for (int i = 0; i < list.size(); i++) {
+				count = (ScrapedData) list.get(i);
+			}
+			lastFileName = count.getFileName();
+			System.out.println("last file Name:" + lastFileName);
+		} catch (Exception e) {
+			logger.debug("Exception in checking last file name", e);
 		}
 		session.close();
-		lastFileName = count.getFileName();
-		System.out.println("last file Name:" + lastFileName);
 		return lastFileName;
 	}
 
 	// Returns last id of given file
 	@SuppressWarnings("rawtypes")
 	public int checkId(String fileName) {
-		Count count = new Count();
+		ScrapedData count = new ScrapedData();
 		int id = 0;
+		try {
+			session = sessionFactory.openSession();
 
-		session = sessionFactory.openSession();
+			Query query = session.createQuery("from ScrapedData where fileName=:fileName order by no DESC");
+			/*
+			 * List<ScrapedData> sdLis = (List<ScrapedData>)
+			 * session.createCriteria(ScrapedData.class)
+			 * .add(Restrictions.eq(fileName, fileName) )
+			 * .addOrder(Order.desc("no"));
+			 */
+			query.setString("fileName", fileName);
+			query.setMaxResults(1);
 
-		Query query = session.createQuery("from Count where fileName=:fileName order by no DESC");
-		query.setString("fileName", fileName);
-		query.setMaxResults(1);
+			List list = query.list();
+			for (int i = 0; i < list.size(); i++) {
+				count = (ScrapedData) list.get(i);
+			}
 
-		List list = query.list();
-		for (int i = 0; i < list.size(); i++) {
-			count = (Count) list.get(i);
+			id = count.getId();
+			System.out.println("Last id(db):" + id);
+		} catch (Exception e) {
+			logger.debug("Exception in checking id", e);
 		}
-
-		id = count.getId();
-		System.out.println("Last id(db):" + id);
 		session.close();
+
 		return id;
 	}
 
 	// Returns last id in database
 	@SuppressWarnings("rawtypes")
 	public int checkLastId() {
-		Count count = new Count();
+		ScrapedData count = new ScrapedData();
 		int id = 0;
+		try {
+			session = sessionFactory.openSession();
 
-		session = sessionFactory.openSession();
+			Query query = session.createQuery("from ScrapedData order by id DESC");
+			query.setMaxResults(1);
 
-		Query query = session.createQuery("from Count order by id DESC");
-		query.setMaxResults(1);
+			List list = query.list();
+			for (int i = 0; i < list.size(); i++) {
+				count = (ScrapedData) list.get(i);
+				count.toString();
+			}
 
-		List list = query.list();
-		for (int i = 0; i < list.size(); i++) {
-			count = (Count) list.get(i);
-			count.toString();
+			id = count.getId();
+			System.out.println("last id in database regardless of filename:" + id);
+		} catch (Exception e) {
+			logger.debug("Exception in checking last id from database", e);
 		}
-
-		id = count.getId();
-		System.out.println("last id in database regardless of filename:" + id);
 		session.close();
+
 		return id;
 	}
 
 	// Returns last progress of given file
 	@SuppressWarnings("rawtypes")
 	public int checkProgress(String fileName, int id) {
-		Count count = new Count();
+		ScrapedData count = new ScrapedData();
 		int progress = 0;
+		try {
+			session = sessionFactory.openSession();
 
-		session = sessionFactory.openSession();
+			// Returns data in descending order
+			Query query = session.createQuery("from ScrapedData where fileName=:fileName and id=:id order by no DESC");
+			query.setString("fileName", fileName);
+			query.setInteger("id", id);
 
-		// Returns data in descending order
-		Query query = session.createQuery("from Count where fileName=:fileName and id=:id order by no DESC");
-		query.setString("fileName", fileName);
-		query.setInteger("id", id);
+			// Restricting no of records to one to get last progress
+			query.setMaxResults(1);
 
-		// Restricting no of records to one to get last progress
-		query.setMaxResults(1);
-
-		List list = query.list();
-		for (int i = 0; i < list.size(); i++) {
-			count = (Count) list.get(i);
+			List list = query.list();
+			for (int i = 0; i < list.size(); i++) {
+				count = (ScrapedData) list.get(i);
+			}
+			// getting last progress
+			progress = count.getNo();
+			System.out.println("total Progress(db):" + progress);
+		} catch (Exception e) {
+			logger.debug("Exception in checking progress", e);
 		}
-		// getting last progress
-		progress = count.getNo();
 		session.close();
-		System.out.println("total Progress(db):" + progress);
+
 		return progress;
 	}
 
 	// Update the filename to filename concatenated with id
 	public void update(String fileName, int id) {
-		session = sessionFactory.openSession();
-
-		Query update = session.createQuery("update Count set fileName=:filename where id=:id");
-		update.setString("filename", fileName);
-		update.setInteger("id", id);
-		update.executeUpdate();
+		try {
+			session = sessionFactory.openSession();
+			Query update = session.createQuery("update ScrapedData set fileName=:filename where id=:id");
+			update.setString("filename", fileName);
+			update.setInteger("id", id);
+			update.executeUpdate();
+			logger.debug("File name is updated");
+		} catch (Exception e) {
+			logger.debug("Exception while updating file name", e);
+		}
 		session.close();
-		System.out.println("Updated");
+
 	}
 
 	@SuppressWarnings("unchecked")
-	public String getFileRecords(String fileName) {
-		session = sessionFactory.openSession();
-		String data = "PlayStore Title,Genre,Size,Version,Publish Date,Package,Url,Apk Title,Genre,Size,Version,Publish Date,Download Link \n";
+	public List<ScrapedData> getFileRecords(String fileName) {
+		List<ScrapedData> list = null;
+		try {
+			session = sessionFactory.openSession();
 
-		Query query = session.createQuery("from Count where fileName=:fileName");
-		query.setString("fileName", fileName);
+			Query query = session.createQuery("from ScrapedData where fileName=:fileName");
+			query.setString("fileName", fileName);
 
-		List<Count> list = query.list();
-		for (Count count2 : list) {
-			data = data + count2.getTitle();
-			data = data + ",";
-			data = data + count2.getGenre();
-			data = data + ",";
-			data = data + count2.getSize();
-			data = data + ",";
-			data = data + count2.getVersion();
-			data = data + ",";
-			
-			String date=count2.getPublishDate();
-			if(date.contains(","))
-				date=date.replaceAll(",", "");
-			
-			data = data + date;
-			data = data + ",";
-			data = data + count2.getPackageName();
-			data = data + ",";
-			data = data + count2.getUrl();
-			data = data + ",";
-			data = data + count2.getDlTitle();
-			data = data + ",";
-			data = data + count2.getDlGenre();
-			data = data + ",";
-			data = data + count2.getDlSize();
-			data = data + ",";
-			data = data + count2.getDlVersion();
-			data = data + ",";
-			data = data + count2.getDlPublishDate();
-			data = data + ",";
-			data = data + count2.getDownloadLink();
-			data = data + "\n";
+			list = query.list();
+		} catch (Exception e) {
+			logger.debug("Exception in getting file records");
 		}
-		System.out.println(data);
-
-		return data;
+		session.close();
+		return list;
 
 	}
 }

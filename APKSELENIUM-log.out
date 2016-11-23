@@ -1,0 +1,12 @@
+Excepion in isEmpty
+java.lang.NullPointerException
+	at com.game.model.ApkDownloadSelenium.readFile(ApkDownloadSelenium.java:181)
+	at com.game.Client.Client.main(Client.java:145)
+Unable to read URL
+java.lang.NullPointerException
+	at com.game.model.ApkDownloadSelenium.readFile(ApkDownloadSelenium.java:190)
+	at com.game.Client.Client.main(Client.java:145)
+Opening page:https://play.google.com/store/apps/details?id=com.wordsmobile.grandfightgangsters
+Automation Completed
+Opening page:https://play.google.com/store/apps/details?id=com.wawoo.gunshootwar
+Automation Completed

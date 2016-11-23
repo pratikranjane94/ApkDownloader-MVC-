@@ -5,13 +5,14 @@
 
 package com.game.dao;
 
-import java.util.ArrayList;
+import java.util.List;
+
+import com.game.dto.ScrapedData;
 
 public interface GameJsoupDao {
 
 	// Inserting JSOUP data into database
-	public void insert(int id, int no, String fileName, ArrayList<String> playStoreDetails,
-			ArrayList<String> apkSiteDetails);
+	public void insert(ScrapedData count);
 	
 	// Returns whether database is empty or not
 	public boolean isEmpty();
@@ -31,5 +32,5 @@ public interface GameJsoupDao {
 	//Update the filename to filename concatenated with id
 	public void update(String fileName, int id);
 	
-	public String getFileRecords(String fileName);
+	public List<ScrapedData> getFileRecords(String fileName);
 }

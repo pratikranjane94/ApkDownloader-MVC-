@@ -12,13 +12,18 @@ import java.io.FileWriter;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 
+import org.apache.log4j.Logger;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 
 import com.game.dto.JsonInfo;
+import com.game.dto.PlayStoreData;
+import com.game.dto.ScrapedData;
 
 public class ApkSiteDataFetching {
+
+	Logger logger = Logger.getLogger("APKSITE");
 
 	private JsonInfo jsonInfo;
 
@@ -26,18 +31,20 @@ public class ApkSiteDataFetching {
 		this.jsonInfo = jsonInfo;
 	}
 
-	public ArrayList<String> createApkSiteDetails(String pack) {
+	public ScrapedData createApkSiteDetails(PlayStoreData playStoreData, int id, int no, String fileName) {
 
 		ArrayList<String> s1 = new ArrayList<String>();
-		ArrayList<String> apkSiteDetails = new ArrayList<String>();
+		ScrapedData count = new ScrapedData();
 
 		String apk = "https://apk-dl.com/";
-		String apkSite = apk.concat(pack);
-		String downUrl = "";
-		String title = "helo";
+		String apkSite = apk.concat(playStoreData.getPackageName());
+		String downloadLink = "";
+		String dlTitle = "";
 		try {
 			// fetch the document over HTTP
 			Document doc = Jsoup.connect(apkSite).userAgent("Chrome/47.0.2526.80").timeout(10000).get();
+
+			logger.debug("Scraping of APK-DL data started");
 
 			// getting info class to fetch genre title version and publish date
 			Elements infoClass = doc.select("[class=info section]");
@@ -51,90 +58,98 @@ public class ApkSiteDataFetching {
 			String info = s1.toString();
 
 			// getting title
-			title = info.substring((info.indexOf("Name") + 4), (info.indexOf("Package Name") - 1)).trim();
+			dlTitle = info.substring((info.indexOf("Name") + 4), (info.indexOf("Package Name") - 1)).trim();
 
+			System.out.println(info);
 			// getting genre
-			String genre = info.substring((info.indexOf("Category") + 8), (info.indexOf("Developer Visit") - 1)).trim();
+			String dlGenre = doc.getElementsByClass("category").text();
 
 			// getting version
-			String version = info.substring((info.indexOf("Version") + 7), (info.indexOf("Developer") - 1)).trim();
+			String dlVersion = info.substring((info.indexOf("Version") + 7), (info.indexOf("Developer") - 1)).trim();
 
 			// getting publish date
-			String pDate = info.substring((info.indexOf("Updated") + 7), (info.indexOf("File") - 1)).trim();
+			String dlPublishDate = info.substring((info.indexOf("Updated") + 7), (info.indexOf("File") - 1)).trim();
 
 			// replacing comma in date with space
-			pDate = pDate.replace(",", " ");
+			dlPublishDate = dlPublishDate.replace(",", " ");
 
 			// getting size
 			String size = info.substring((info.indexOf("Size") + 4), (info.indexOf("Requires") - 1)).trim();
 
 			// getting download link
-			String downLink = doc.getElementsByClass("download-btn")
+			String downUrl = doc.getElementsByClass("download-btn")
 					.select("[class=mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect fixed-size mdl-button--primary]")
 					.attr("href");
 
 			// checking whether link contains "HTTP"
-			if (downLink.contains("http") == false)
-				downLink = ("http://apk-dl.com").concat(downLink.trim());
+			if (downUrl.contains("http") == false)
+				downUrl = ("http://apk-dl.com").concat(downUrl.trim());
 
 			// scraping downLink to get download link
-			Document doc1 = Jsoup.connect(downLink).userAgent("Chrome/47.0.2526.80").timeout(10000).get();
-			downUrl = doc1.getElementsByTag("p").select("a[href]").attr("href");
+			Document downloadLinkDoc = Jsoup.connect(downUrl).userAgent("Chrome/47.0.2526.80").timeout(10000).get();
+			downloadLink = downloadLinkDoc.getElementsByTag("p").select("a[href]").attr("href");
 
-			if (downUrl != "") {
+			if (downloadLink != "") {
 				// adding "HTTP" to link if absent
-				if (downUrl.contains("http") == false) {
-					downUrl = ("http:").concat(downUrl);
+				if (downloadLink.contains("http") == false) {
+					downloadLink = ("http:").concat(downloadLink);
 				}
 			} else {
 				// no download link present
-				downUrl = downUrl.replaceAll(downUrl, "No download Link or paid app");
+				downloadLink = downloadLink.replaceAll(downloadLink, "No download Link or paid app");
 			}
 
 			// if no data fetched
-			if (title.equals("") && genre.equals("") && version.equals("") && size.equals("") && pDate.equals("")) {
+			if (dlTitle.equals("asd") && dlGenre.equals("") && dlVersion.equals("") && size.equals("") && dlPublishDate.equals("")) {
 				return null;
 			} else {
-				apkSiteDetails.add(title);
-				apkSiteDetails.add(genre);
-				apkSiteDetails.add(size);
-				apkSiteDetails.add(version);
-				apkSiteDetails.add(pDate);
-				apkSiteDetails.add(downUrl);
+				count.setDlTitle(dlTitle);
+				count.setDlGenre(dlGenre);
+				count.setDlSize(size);
+				count.setDlVersion(dlVersion);
+				count.setDlPublishDate(dlPublishDate);
+				count.setDownloadLink(downloadLink);
+				count.setPlayStoreData(playStoreData);
+				count.setFileName(fileName);
+				count.setId(id);
+				count.setNo(no);
 
 				// displaying game info
 				System.out.println("----------Dl-apk site data--------------");
-				System.out.println("Title: " + title);
-				System.out.println("Apk Site genre: " + genre);
-				System.out.println("Version: " + version);
-				System.out.println("Published Date: " + pDate);
+				System.out.println("Title: " + dlTitle);
+				System.out.println("Apk Site genre: " + dlGenre);
+				System.out.println("Version: " + dlVersion);
+				System.out.println("Published Date: " + dlPublishDate);
 				System.out.println("Size: " + size);
-				System.out.println("Download Link:" + downUrl);
+				System.out.println("Download Link:" + count.getDownloadLink());
+				logger.debug("APK-DL Data Scraping completed");
 			}
 		} catch (UnknownHostException u) {
 			try {
 				Thread.sleep(1000);
 			} catch (InterruptedException e) {
-				e.printStackTrace();
+				// ignore
 			}
+			logger.debug("UnknownHostException! Trying To Scraping Data Again");
 			ApkSiteDataFetching as = new ApkSiteDataFetching();
-			as.createApkSiteDetails(pack);
+			as.createApkSiteDetails(playStoreData, id, no, fileName);
+		} catch (NullPointerException e) {
+			System.out.println("Null exception");
+			logger.debug("Null Pointer Exception",e);
 		} catch (Exception e) {
+			e.printStackTrace();
+			logger.debug("Exception",e);
 			return null;
 		}
-		return apkSiteDetails;
+		return count;
 	}
 
 	// Creating JSON file of fetched info
-	public boolean createCsv(ArrayList<String> apkSiteDetails, String downloadFileName) {
+	public boolean createCsv(ScrapedData count, String downloadFileName) {
 		try {
-			String title = apkSiteDetails.get(0);
-			String genre = apkSiteDetails.get(1);
-			String size = apkSiteDetails.get(2);
-			String version = apkSiteDetails.get(3);
-			String pDate = apkSiteDetails.get(4);
-			String downUrl = apkSiteDetails.get(5);
-
+			
+			logger.debug("Creating CSV of APK-DL Meta Data");
+			
 			boolean notFound = false;
 
 			File file = new File(jsonInfo.getCsvDownloadFilePath() + "/" + downloadFileName);
@@ -153,29 +168,31 @@ public class ApkSiteDataFetching {
 				bw.newLine();
 			}
 			// appending data to CSV
-			bw.append(title);
+			bw.append(count.getDlTitle());
 			bw.append(",");
-			bw.append(genre);
+			bw.append(count.getDlGenre());
 			bw.append(",");
-			bw.append(size);
+			bw.append(count.getDlSize());
 			bw.append(",");
-			bw.append(version);
+			bw.append(count.getDlVersion());
 			bw.append(",");
-			bw.append(pDate);
+			bw.append(count.getDlPublishDate());
 			bw.append(",");
-			bw.append(downUrl);
+			bw.append(count.getDownloadLink());
 			bw.append(",");
-			if (downUrl.contains("http://dl3.apk-dl.com/store/download?id")) {
+			if (count.getDownloadLink().contains("http://dl3.apk-dl.com/store/download?id")) {
 				System.out.println("inside if");
 				bw.append("Broken Link");
 			}
 			bw.newLine();
 			bw.close();
-			System.out.println(title+" Apk-dl data Stored in csv");
+			System.out.println(count.getDlTitle() + " Apk-dl data Stored in csv");
+			logger.debug("Apk-dl data Stored in csv");
 			System.out.println("");
 		}
 
 		catch (Exception e) {
+			logger.debug("Exception While Creating CSV",e);
 			return false;
 		}
 		return true;
