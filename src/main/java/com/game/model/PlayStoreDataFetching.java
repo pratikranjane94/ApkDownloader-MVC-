@@ -9,6 +9,7 @@ package com.game.model;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.net.UnknownHostException;
 
 import org.apache.log4j.Logger;
@@ -82,6 +83,7 @@ public class PlayStoreDataFetching {
 				System.out.println("Update date: " + publishDate);
 				System.out.println("Package Name:" + packageName);
 				System.out.println("Play Store URL:" + url);
+				logger.debug("PlayStore Data Scraping Completed");
 			}
 
 		} catch (UnknownHostException u) {
@@ -105,16 +107,7 @@ public class PlayStoreDataFetching {
 
 	// creating CSV file for play store data
 	public boolean createCsv(PlayStoreData playStoreData, String downloadFileName) {
-/*		String title = playStoreDetails.get(0);
-		String genre = playStoreDetails.get(1);
-		String size = playStoreDetails.get(2);
-		String version = playStoreDetails.get(3);
-		String pDate = playStoreDetails.get(4);
-		String pack = playStoreDetails.get(5);
-		String url = playStoreDetails.get(6);*/
-		
-		
-		
+
 		boolean notFound = false;
 		try {
 			// adding data to CSV
@@ -124,6 +117,7 @@ public class PlayStoreDataFetching {
 			if (!dir.exists()) {
 				dir.mkdirs();
 				System.out.println("directory created");
+				logger.debug("Directory created "+dir.toString());
 			}
 
 			if (!file.exists())
@@ -135,6 +129,7 @@ public class PlayStoreDataFetching {
 			// if file doesn't exists, then create it
 			if (notFound) {
 				file.createNewFile();
+				logger.debug("New file is Created "+file.toString());
 				bw.append("PlayStore Title,Genre,Size,Version,Publish Date,Package,Url,");
 				bw.append("Apk Title,Genre,Size,Version,Publish Date,Download Link,");
 				bw.newLine();
@@ -159,18 +154,16 @@ public class PlayStoreDataFetching {
 
 			System.out.println(playStoreData.getTitle() + " Play store data Stored in csv");
 			System.out.println("");
-		} catch (Exception e) {
-			e.printStackTrace();
+			logger.debug(playStoreData.getTitle() + " Play store data Stored in csv");
+		} catch(IOException e){
+			//ignore
+		}
+		catch (Exception e) {
+			System.out.println("Exception while creating CSV "+e.toString());
 			return false;
 		}
 		return true;
 
-	}
-
-	// getting package name from PlayStore URL
-	public String getPackage(PlayStoreData playStoreData) {
-		String pack = playStoreData.getPackageName();
-		return pack;
 	}
 
 }

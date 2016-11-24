@@ -178,7 +178,8 @@ public class ApkDownloadSelenium {
 		while (url != null) {
 			url = br.readLine();
 			try {
-				if (url.trim().isEmpty()) {
+				System.out.println("URL:"+url);
+				if (url.trim().equals(null) || url.trim().equals("") ) {
 					continue;
 				}
 			} catch (Exception e) {

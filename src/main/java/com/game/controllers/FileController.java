@@ -127,7 +127,7 @@ public class FileController {
 						id = id + 1;
 					}
 				} catch (Exception e) {
-					// TODO: handle exception
+					logger.debug("Exception while database opertions");
 				}
 
 			}
