@@ -1,11 +1,11 @@
 Excepion in isEmpty
 java.lang.NullPointerException
-	at com.game.model.ApkDownloadSelenium.readFile(ApkDownloadSelenium.java:182)
-	at com.game.Client.Client.main(Client.java:145)
+	at com.game.model.ApkDownloadSelenium.readFile(ApkDownloadSelenium.java:185)
+	at com.testing.StandAloneApkDownloader.Testing.main(Testing.java:212)
 Unable to read URL
 java.lang.NullPointerException
-	at com.game.model.ApkDownloadSelenium.readFile(ApkDownloadSelenium.java:191)
-	at com.game.Client.Client.main(Client.java:145)
+	at com.game.model.ApkDownloadSelenium.readFile(ApkDownloadSelenium.java:194)
+	at com.testing.StandAloneApkDownloader.Testing.main(Testing.java:212)
 Opening page:https://play.google.com/store/apps/details?id=com.wordsmobile.grandfightgangsters
 Automation Completed
 Opening page:https://play.google.com/store/apps/details?id=com.wawoo.gunshootwar

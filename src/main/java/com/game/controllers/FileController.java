@@ -202,5 +202,12 @@ public class FileController {
 		response = serverUtilities.setDataInResponse(fileMeta, response, data);
 
 	}// End of sending file data in response
+	
+	@RequestMapping(value="/test",method=RequestMethod.POST)
+	public String test(@RequestParam("gameName") String gameName){
+		System.out.println("game name"+gameName);
+		return gameName;
+	}
+	
 
 }// End of class

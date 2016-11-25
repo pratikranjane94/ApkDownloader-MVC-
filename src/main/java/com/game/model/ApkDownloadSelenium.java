@@ -164,6 +164,7 @@ public class ApkDownloadSelenium {
 	}
 
 	// reading download file to get play store URL
+	
 	public ArrayList<String> readFile(String filePath) throws IOException {
 
 		String url = null;
@@ -171,6 +172,8 @@ public class ApkDownloadSelenium {
 
 		System.out.println("Filepath:" + filePath);
 
+		filePath=new File(filePath).getAbsolutePath();
+		System.out.println("file"+filePath);
 		FileReader fr = new FileReader(filePath);
 		BufferedReader br = new BufferedReader(fr);
 		url = br.readLine();

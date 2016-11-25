@@ -9,6 +9,7 @@ package com.game.model;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 
@@ -34,7 +35,7 @@ public class ApkSiteDataFetching {
 	public ScrapedData createApkSiteDetails(PlayStoreData playStoreData, int id, int no, String fileName) {
 
 		ArrayList<String> s1 = new ArrayList<String>();
-		ScrapedData count = new ScrapedData();
+		ScrapedData scrapedData = new ScrapedData();
 
 		String apk = "https://apk-dl.com/";
 		String apkSite = apk.concat(playStoreData.getPackageName());
@@ -100,19 +101,20 @@ public class ApkSiteDataFetching {
 			}
 
 			// if no data fetched
-			if (dlTitle.equals("asd") && dlGenre.equals("") && dlVersion.equals("") && size.equals("") && dlPublishDate.equals("")) {
+			if (dlTitle.equals("asd") && dlGenre.equals("") && dlVersion.equals("") && size.equals("")
+					&& dlPublishDate.equals("")) {
 				return null;
 			} else {
-				count.setDlTitle(dlTitle);
-				count.setDlGenre(dlGenre);
-				count.setDlSize(size);
-				count.setDlVersion(dlVersion);
-				count.setDlPublishDate(dlPublishDate);
-				count.setDownloadLink(downloadLink);
-				count.setPlayStoreData(playStoreData);
-				count.setFileName(fileName);
-				count.setId(id);
-				count.setNo(no);
+				scrapedData.setDlTitle(dlTitle);
+				scrapedData.setDlGenre(dlGenre);
+				scrapedData.setDlSize(size);
+				scrapedData.setDlVersion(dlVersion);
+				scrapedData.setDlPublishDate(dlPublishDate);
+				scrapedData.setDownloadLink(downloadLink);
+				scrapedData.setPlayStoreData(playStoreData);
+				scrapedData.setFileName(fileName);
+				scrapedData.setId(id);
+				scrapedData.setNo(no);
 
 				// displaying game info
 				System.out.println("----------Dl-apk site data--------------");
@@ -121,7 +123,7 @@ public class ApkSiteDataFetching {
 				System.out.println("Version: " + dlVersion);
 				System.out.println("Published Date: " + dlPublishDate);
 				System.out.println("Size: " + size);
-				System.out.println("Download Link:" + count.getDownloadLink());
+				System.out.println("Download Link:" + scrapedData.getDownloadLink());
 				logger.debug("APK-DL Data Scraping completed");
 			}
 		} catch (UnknownHostException u) {
@@ -133,23 +135,32 @@ public class ApkSiteDataFetching {
 			logger.debug("UnknownHostException! Trying To Scraping Data Again");
 			ApkSiteDataFetching as = new ApkSiteDataFetching();
 			as.createApkSiteDetails(playStoreData, id, no, fileName);
+		} catch (SocketTimeoutException u) {
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				// ignore
+			}
+			logger.debug("SocketTimeoutException! Trying To Scraping Data Again");
+			ApkSiteDataFetching as = new ApkSiteDataFetching();
+			as.createApkSiteDetails(playStoreData, id, no, fileName);
 		} catch (NullPointerException e) {
 			System.out.println("Null exception");
-			logger.debug("Null Pointer Exception",e);
+			logger.debug("Null Pointer Exception", e);
 		} catch (Exception e) {
 			e.printStackTrace();
-			logger.debug("Exception",e);
+			logger.debug("Exception", e);
 			return null;
 		}
-		return count;
+		return scrapedData;
 	}
 
 	// Creating JSON file of fetched info
-	public boolean createCsv(ScrapedData count, String downloadFileName) {
+	public boolean createCsv(ScrapedData scrapedData, String downloadFileName) {
 		try {
-			
+
 			logger.debug("Creating CSV of APK-DL Meta Data");
-			
+
 			boolean notFound = false;
 
 			File file = new File(jsonInfo.getCsvDownloadFilePath() + "/" + downloadFileName);
@@ -168,31 +179,33 @@ public class ApkSiteDataFetching {
 				bw.newLine();
 			}
 			// appending data to CSV
-			bw.append(count.getDlTitle());
+			bw.append(scrapedData.getDlTitle());
 			bw.append(",");
-			bw.append(count.getDlGenre());
+			bw.append(scrapedData.getDlGenre());
 			bw.append(",");
-			bw.append(count.getDlSize());
+			bw.append(scrapedData.getDlSize());
 			bw.append(",");
-			bw.append(count.getDlVersion());
+			bw.append(scrapedData.getDlVersion());
 			bw.append(",");
-			bw.append(count.getDlPublishDate());
+			bw.append(scrapedData.getDlPublishDate());
 			bw.append(",");
-			bw.append(count.getDownloadLink());
+			bw.append(scrapedData.getDownloadLink());
 			bw.append(",");
-			if (count.getDownloadLink().contains("http://dl3.apk-dl.com/store/download?id")) {
+			if (scrapedData.getDownloadLink().contains("http://dl3.apk-dl.com/store/download?id")) {
 				System.out.println("inside if");
 				bw.append("Broken Link");
 			}
 			bw.newLine();
 			bw.close();
-			System.out.println(count.getDlTitle() + " Apk-dl data Stored in csv");
+			System.out.println(scrapedData.getDlTitle() + " Apk-dl data Stored in csv");
 			logger.debug("Apk-dl data Stored in csv");
 			System.out.println("");
 		}
 
 		catch (Exception e) {
-			logger.debug("Exception While Creating CSV",e);
+			ApkSiteDataFetching as = new ApkSiteDataFetching();
+			as.createCsv(scrapedData, downloadFileName);
+			logger.debug("Exception While Creating CSV", e);
 			return false;
 		}
 		return true;

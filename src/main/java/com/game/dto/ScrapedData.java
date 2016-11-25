@@ -19,7 +19,7 @@ public class ScrapedData {
 	private int id;
 	@Column
 	private int no;
-	@Column(name="FILE_NAME")
+	@Column
 	private String fileName;
 	@Column
 	private String dlTitle;
@@ -29,7 +29,7 @@ public class ScrapedData {
 	private String dlSize;
 	@Column
 	private String dlVersion;
-	@Column(name="PUBLISH_DATE")
+	@Column
 	private String dlPublishDate;
 	@Column
 	private String downloadLink;
@@ -101,6 +101,13 @@ public class ScrapedData {
 	}
 	public void setPlayStoreData(PlayStoreData playStoreData) {
 		this.playStoreData = playStoreData;
+	}
+	@Override
+	public String toString() {
+		return "ScrapedData [key=" + key + ", id=" + id + ", no=" + no + ", fileName=" + fileName + ", dlTitle="
+				+ dlTitle + ", dlGenre=" + dlGenre + ", dlSize=" + dlSize + ", dlVersion=" + dlVersion
+				+ ", dlPublishDate=" + dlPublishDate + ", downloadLink=" + downloadLink + ", playStoreData="
+				+ playStoreData + "]";
 	}	
 	
 }

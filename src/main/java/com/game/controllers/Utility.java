@@ -52,11 +52,6 @@ public class Utility {
 		String cd = null;
 		try {
 			cd = header[0].getValue();
-		} catch (Exception e) {
-			// TODO: handle exception
-		}
-		
-
 		String[] cds = cd.split(";");
 		for (String string : cds) {
 			if (string.trim().startsWith("filename")) {
@@ -65,6 +60,9 @@ public class Utility {
 				System.out.println("File name:" + fileName);
 				break;
 			}
+		}
+		} catch (Exception e) {
+			System.out.println("Exception in getting file name from response"+e.toString());
 		}
 		return fileName;
 	}

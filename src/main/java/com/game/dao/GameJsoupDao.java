@@ -7,8 +7,10 @@ package com.game.dao;
 
 import java.util.List;
 
-import com.game.dto.ScrapedData;
+import org.springframework.stereotype.Repository;
 
+import com.game.dto.ScrapedData;
+@Repository("gameJsoupDao")
 public interface GameJsoupDao {
 
 	// Inserting JSOUP data into database

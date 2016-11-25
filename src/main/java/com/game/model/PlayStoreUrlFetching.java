@@ -11,6 +11,8 @@ import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -38,10 +40,20 @@ public class PlayStoreUrlFetching {
 			} catch (InterruptedException e1) {
 				e1.printStackTrace();
 			}
+			System.out.println("URL not fetched. Trying to fetch URL again");
+			PlayStoreUrlFetching u = new PlayStoreUrlFetching();
+			u.findUrl(gname);
+		}catch (HttpStatusException e) {
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e1) {
+				e1.printStackTrace();
+			}
+			System.out.println("URL not fetched. Trying to fetch URL again");
 			PlayStoreUrlFetching u = new PlayStoreUrlFetching();
 			u.findUrl(gname);
 		} catch (Exception e) {
-			e.printStackTrace();
+			System.out.println("Exception occured in Play store URL fetching "+e.toString());
 			return null;
 		}
 
